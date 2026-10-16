@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="skyGrad2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="busGrad2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="roadGrad2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="400" fill="url(#skyGrad2)" />
+
+  <!-- Gate Post Right -->
+  <rect x="546" y="80" width="24" height="260" rx="4" fill="#64748b" />
+  <rect x="540" y="60" width="36" height="20" rx="4" fill="#ef4444" />
+  <circle cx="558" cy="70" r="4" fill="#ffffff" />
+
+  <!-- Road -->
+  <rect x="0" y="300" width="600" height="100" fill="url(#roadGrad2)" />
+  <line x1="20" y1="360" x2="120" y2="360" stroke="#f1f5f9" stroke-width="4" stroke-dasharray="16,12" />
+  <line x1="160" y1="360" x2="300" y2="360" stroke="#f1f5f9" stroke-width="4" stroke-dasharray="16,12" />
+  <line x1="340" y1="360" x2="580" y2="360" stroke="#f1f5f9" stroke-width="4" stroke-dasharray="16,12" />
+
+  <!-- School Bus Body (facing exit direction) -->
+  <path d="M 100 240 L 100 300 L 480 300 L 480 140 L 125 140 L 100 200 Z" fill="url(#busGrad2)" stroke="#075985" stroke-width="3" />
+
+  <!-- Windows -->
+  <path d="M 105 200 L 125 160 L 170 160 L 170 200 Z" fill="#e0f2fe" opacity="0.9" />
+  <rect x="185" y="160" width="55" height="45" rx="6" fill="#7dd3fc" opacity="0.85" />
+  <rect x="255" y="160" width="55" height="45" rx="6" fill="#7dd3fc" opacity="0.85" />
+  <rect x="325" y="160" width="55" height="45" rx="6" fill="#7dd3fc" opacity="0.85" />
+  <rect x="395" y="160" width="55" height="45" rx="6" fill="#7dd3fc" opacity="0.85" />
+
+  <!-- Lights -->
+  <circle cx="102" cy="265" r="9" fill="#fef08a" />
+  <circle cx="102" cy="265" r="14" fill="#fef08a" opacity="0.3" />
+  <rect x="476" y="260" width="6" height="16" rx="2" fill="#ef4444" />
+
+  <!-- Wheels -->
+  <circle cx="160" cy="305" r="32" fill="#0f172a" stroke="#475569" stroke-width="6" />
+  <circle cx="160" cy="305" r="14" fill="#94a3b8" />
+  <circle cx="410" cy="305" r="32" fill="#0f172a" stroke="#475569" stroke-width="6" />
+  <circle cx="410" cy="305" r="14" fill="#94a3b8" />
+
+  <!-- Banner text on Bus -->
+  <rect x="200" y="235" width="240" height="24" rx="4" fill="#0c4a6e" />
+  <text x="320" y="252" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="1">INSTITUTE SHUTTLE</text>
+
+  <!-- Number Plate -->
+  <rect x="105" y="280" width="46" height="15" rx="2" fill="#ffffff" stroke="#000" stroke-width="1" />
+  <text x="128" y="291" font-family="Courier, monospace" font-size="8" font-weight="bold" fill="#000" text-anchor="middle">KA-05-1002</text>
+
+  <!-- Camera Gate Overlay Watermark -->
+  <rect x="15" y="15" width="200" height="34" rx="6" fill="#000000" opacity="0.65" />
+  <circle cx="30" cy="32" r="5" fill="#ef4444" />
+  <text x="45" y="36" font-family="Courier, monospace" font-size="12" font-weight="bold" fill="#ffffff">GATE CAM 01 [EXIT]</text>
+</svg>

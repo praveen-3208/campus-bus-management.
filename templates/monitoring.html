@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Live Gate Monitoring - Campus Security{% endblock %}
+{% block page_title %}Live Gate Monitoring{% endblock %}
+{% block page_subtitle %}Dual HC-SR04 ultrasonic sensor direction inference, vehicle detection & live gate controls{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; margin-bottom: 24px;">
+  <!-- Left Column: Gate Visualizer & Hardware Simulation -->
+  <div>
+    <!-- Interactive Dual Ultrasonic Gate Visualizer -->
+    <div class="gate-visualizer-container">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 14px; margin-bottom: 20px;">
+        <div>
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #38bdf8; font-weight: 700;">
+            <i class="fas fa-wave-square"></i> Real-time Sensor Inference Matrix
+          </div>
+          <h3 style="font-size: 18px; font-weight: 700; color: #ffffff; margin-top: 4px;">Main Campus Gate 01</h3>
+        </div>
+        <div class="direction-badge-live" id="gate-main-status-badge">
+          IDLE • GATE CLEAR
+        </div>
+      </div>
+
+      <!-- Roadway & Sensor Array Visual Diagram -->
+      <div class="gate-roadway">
+        <!-- Road Exterior Side -->
+        <div class="gate-zone-label">
+          <i class="fas fa-road"></i> Public Road<br><small style="color: #64748b;">(Exterior)</small>
+        </div>
+
+        <!-- Sensor Array -->
+        <div class="sensors-interaction-zone">
+          <!-- Sensor 1 (Outer) -->
+          <div class="sensor-column" id="sensor-1-box">
+            <div class="sensor-icon-box" id="sensor-1-icon">
+              <i class="fas fa-broadcast-tower"></i>
+            </div>
+            <div class="sensor-name">Sensor 1</div>
+            <div class="sensor-role">Outer (Road)</div>
+            <span class="badge badge-neutral" id="sensor-1-status" style="font-size: 10px;">IDLE</span>
+          </div>
+
+          <!-- Movement Direction Arrows -->
+          <div class="gate-direction-arrow">
+            <div style="color: #10b981; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              ENTRY &nbsp;<i class="fas fa-arrow-right"></i>
+            </div>
+            <div style="width: 80px; height: 2px; background: #475569; margin: 6px 0; position: relative;">
+              <div id="sensor-transit-indicator" style="position: absolute; top: -3px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: none;"></div>
+            </div>
+            <div style="color: #ef4444; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-arrow-left"></i>&nbsp; EXIT
+            </div>
+          </div>
+
+          <!-- Sensor 2 (Inner) -->
+          <div class="sensor-column" id="sensor-2-box">
+            <div class="sensor-icon-box" id="sensor-2-icon">
+              <i class="fas fa-broadcast-tower"></i>
+            </div>
+            <div class="sensor-name">Sensor 2</div>
+            <div class="sensor-role">Inner (Campus)</div>
+            <span class="badge badge-neutral" id="sensor-2-status" style="font-size: 10px;">IDLE</span>
+          </div>
+        </div>
+
+        <!-- Campus Interior Side -->
+        <div class="gate-zone-label" style="text-align: right;">
+          <i class="fas fa-university"></i> Campus Bay<br><small style="color: #64748b;">(Interior)</small>
+        </div>
+      </div>
+
+      <!-- Cooldown & Debounce Bar -->
+      <div class="cooldown-indicator-box">
+        <div>
+          <span style="color: #94a3b8; font-size: 12px; font-weight: 600;">Duplicate Protection (Cooldown):</span>
+          <span id="cooldown-status-text" style="color: #f8fafc; font-weight: 700; margin-left: 6px;">Ready</span>
+        </div>
+        <div style="font-size: 12px; color: #38bdf8;" id="cooldown-timer-seconds">
+          0.0s
+        </div>
+      </div>
+      <div class="cooldown-progress">
+        <div class="cooldown-fill" id="cooldown-progress-bar"></div>
+      </div>
+
+      <!-- Sensor Inference Rule Info -->
+      <div style="margin-top: 16px; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <i class="fas fa-info-circle" style="color: #38bdf8;"></i> 
+          <strong>Inference Logic:</strong> S1 then S2 = <strong>Entry</strong> | S2 then S1 = <strong>Exit</strong>
+        </div>
+        <div style="color: #64748b;">
+          Max Gap: <span id="info-max-gap">3.5</span>s • Threshold: <span id="info-threshold">50</span>cm
+        </div>
+      </div>
+    </div>
+
+    <!-- Testing & Hardware Simulator Controls -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fas fa-vial"></i> Hardware Simulation & Manual Override
+        </div>
+        <span class="badge badge-neutral" style="font-size: 11px;">Prototype Testing Tools</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+          Use these controls to simulate hardware sensors before connecting the physical ESP32, or to manually log events when a gate override is needed:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px;">
+          <!-- Simulate Full Entry Sequence -->
+          <button class="btn btn-outline" style="border-color: #10b981; color: #065f46; background: #ecfdf5;" onclick="simulateFullSequence('ENTRY')">
+            <i class="fas fa-play" style="color: #10b981;"></i> Simulate Full Entry (S1 &rarr; S2)
+          </button>
+
+          <!-- Simulate Full Exit Sequence -->
+          <button class="btn btn-outline" style="border-color: #ef4444; color: #991b1b; background: #fef2f2;" onclick="simulateFullSequence('EXIT')">
+            <i class="fas fa-play" style="color: #ef4444;"></i> Simulate Full Exit (S2 &rarr; S1)
+          </button>
+
+          <!-- Raw Sensor 1 Pulse -->
+          <button class="btn btn-outline" onclick="simulateRawSensor('s1', 35.0)">
+            <i class="fas fa-signal"></i> Pulse Sensor 1 (Outer)
+          </button>
+
+          <!-- Raw Sensor 2 Pulse -->
+          <button class="btn btn-outline" onclick="simulateRawSensor('s2', 32.0)">
+            <i class="fas fa-signal"></i> Pulse Sensor 2 (Inner)
+          </button>
+        </div>
+
+        <div style="display: flex; gap: 12px; border-top: 1px solid var(--border-light); padding-top: 16px;">
+          <button class="btn btn-success" style="flex: 1;" onclick="triggerDirectManual('ENTRY')">
+            <i class="fas fa-sign-in-alt"></i> Manual Record Entry
+          </button>
+          <button class="btn btn-danger" style="flex: 1;" onclick="triggerDirectManual('EXIT')">
+            <i class="fas fa-sign-out-alt"></i> Manual Record Exit
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Active Target Bus & Camera Preview -->
+  <div>
+    <!-- Active Bus Card -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header" style="background: #0f172a; color: #ffffff;">
+        <div class="card-title" style="color: #ffffff;">
+          <i class="fas fa-crosshairs" style="color: #38bdf8;"></i> Active Gate Target
+        </div>
+        <button class="btn btn-sm btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.3); background: transparent;" onclick="openActiveBusSwitcher()">
+          Change
+        </button>
+      </div>
+      <div class="card-body">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="font-size: 26px; font-weight: 800; color: #0f172a;" id="mon-bus-code">BUS-01</div>
+          <div style="font-size: 14px; font-family: monospace; color: #2563eb; font-weight: 700;" id="mon-bus-reg">KA-05-AA-1001</div>
+          <div style="margin-top: 8px;">
+            <span class="badge badge-inside" id="mon-bus-status">Inside</span>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border-light); padding-top: 14px; font-size: 13px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #64748b;">Assigned Route:</span>
+            <strong id="mon-bus-route" style="color: #1e293b; text-align: right; max-width: 170px;">Route 1 - North</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #64748b;">Driver Name:</span>
+            <strong id="mon-bus-driver" style="color: #1e293b;">Ramesh Sharma</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b;">Driver Contact:</span>
+            <strong id="mon-bus-phone" style="color: #2563eb;">+91 98450 12345</strong>
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border-radius: 8px; padding: 10px; margin-top: 14px; font-size: 12px; color: #64748b;">
+          <i class="fas fa-info-circle" style="color: #2563eb;"></i>
+          Hardware sensors detect movement direction. Events will be recorded for this vehicle.
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Camera Mini-Widget -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="font-size: 14px;">
+          <i class="fas fa-camera"></i> IP Webcam Gate Stream
+        </div>
+        <a href="{{ url_for('camera_page') }}" style="font-size: 12px; color: #2563eb; text-decoration: none;">Configure</a>
+      </div>
+      <div class="card-body" style="padding: 12px;">
+        <div class="camera-view-card" style="aspect-ratio: 4 / 3; min-height: 180px;" id="mini-cam-container">
+          <img id="mini-cam-feed" src="{{ url_for('proxy_snapshot') }}" alt="Gate Camera" class="camera-feed-img" onerror="handleMiniCamError()">
+          <div class="camera-watermark" id="mini-cam-watermark">
+            <span class="status-dot" style="background: #10b981;"></span>
+            <span>GATE-CAM-01</span>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+          <span style="font-size: 12px; color: #64748b;" id="mini-cam-status-label">Live Snapshot Stream</span>
+          <button class="btn btn-sm btn-outline" onclick="refreshMiniCamSnapshot()">
+            <i class="fas fa-redo"></i> Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Live Events Feed Section -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fas fa-history"></i> Real-time Gate Movements Feed
+    </div>
+    <span class="badge badge-neutral" style="font-size: 11px;">Auto-Captures & Sensor Logs</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Snapshot</th>
+            <th>Bus ID</th>
+            <th>Registration</th>
+            <th>Direction</th>
+            <th>Sensor Sequence</th>
+            <th>Driver</th>
+            <th>Timestamp</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="live-monitoring-events-tbody">
+          <tr>
+            <td colspan="8" style="text-align: center; color: #64748b; padding: 30px;">
+              Loading gate events...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/monitoring.js') }}"></script>
+{% endblock %}

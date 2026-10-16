@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Settings & Hardware Diagnostics - Campus Gate{% endblock %}
+{% block page_title %}Settings & Hardware Status{% endblock %}
+{% block page_subtitle %}ESP32 microcontroller health, ultrasonic sensor calibration, and firmware documentation{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+  <!-- Left Column: Hardware Health & Sensor Calibration Form -->
+  <div>
+    <!-- ESP32 Connection Monitor Card -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fas fa-microchip"></i> ESP32 Microcontroller Status
+        </div>
+        <span class="status-pill offline" id="settings-esp32-pill">
+          <span class="status-dot"></span>
+          <span id="settings-esp32-status-text">Offline</span>
+        </span>
+      </div>
+      <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 13px; margin-bottom: 16px;">
+          <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
+            <div style="color: #64748b; font-size: 11px; text-transform: uppercase;">Device Identifier</div>
+            <strong style="color: #0f172a; font-size: 14px;" id="settings-esp-device">ESP32-GATE-01</strong>
+          </div>
+          <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
+            <div style="color: #64748b; font-size: 11px; text-transform: uppercase;">Device IP Address</div>
+            <strong style="color: #0f172a; font-size: 14px; font-family: monospace;" id="settings-esp-ip">Not Connected</strong>
+          </div>
+          <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
+            <div style="color: #64748b; font-size: 11px; text-transform: uppercase;">Last Heartbeat</div>
+            <strong style="color: #0f172a;" id="settings-esp-last-seen">Never</strong>
+          </div>
+          <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
+            <div style="color: #64748b; font-size: 11px; text-transform: uppercase;">Endpoint URL</div>
+            <strong style="color: #2563eb; font-family: monospace; font-size: 12px;">/api/sensor-event</strong>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-outline btn-sm" onclick="sendEsp32SimulatedPing()">
+            <i class="fas fa-satellite-dish"></i> Send Test Heartbeat Ping
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="loadSettings()">
+            <i class="fas fa-sync-alt"></i> Refresh Diagnostics
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ultrasonic Calibration Form -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fas fa-sliders-h"></i> HC-SR04 Sensor Calibration
+        </div>
+      </div>
+      <div class="card-body">
+        <form id="sensor-calibration-form" onsubmit="saveCalibrationSettings(event)">
+          <div class="form-group">
+            <label class="form-label" for="setting-threshold-cm">
+              Obstacle Distance Threshold (cm)
+            </label>
+            <input type="number" step="1" min="10" max="300" id="setting-threshold-cm" class="form-control" value="50" required>
+            <div class="form-text">
+              Distances equal or below this value trigger a vehicle detection (Default: 50cm - 70cm depending on gate width).
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="setting-max-gap-ms">
+              Maximum Inter-Sensor Transition Gap (ms)
+            </label>
+            <input type="number" step="100" min="500" max="10000" id="setting-max-gap-ms" class="form-control" value="3500" required>
+            <div class="form-text">
+              Maximum allowable time between S1 and S2 triggers for valid direction inference (Default: 3500ms).
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="setting-cooldown-sec">
+              Duplicate Protection Cooldown (Seconds)
+            </label>
+            <input type="number" step="1" min="2" max="30" id="setting-cooldown-sec" class="form-control" value="6" required>
+            <div class="form-text">
+              Cooldown window to prevent multiple event records for one passing bus (Default: 6 seconds).
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+            <i class="fas fa-save"></i> Save Calibration Parameters
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Circuit Wiring, API Docs & System Reset -->
+  <div>
+    <!-- Hardware Circuit Pinout Card -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fas fa-project-diagram"></i> Hardware Wiring Pinout (ESP32)
+        </div>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="custom-table" style="font-size: 13px;">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Sensor Pin</th>
+                <th>ESP32 GPIO Pin</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Sensor 1 (Outer)</strong></td>
+                <td>VCC / GND</td>
+                <td>VIN (5V) / GND</td>
+                <td>Power rails</td>
+              </tr>
+              <tr>
+                <td>Sensor 1 (Outer)</td>
+                <td>TRIG</td>
+                <td><span style="font-family: monospace; font-weight: 700; color: #2563eb;">GPIO 5</span></td>
+                <td>Trigger pulse output</td>
+              </tr>
+              <tr>
+                <td>Sensor 1 (Outer)</td>
+                <td>ECHO</td>
+                <td><span style="font-family: monospace; font-weight: 700; color: #2563eb;">GPIO 18</span></td>
+                <td>Echo pulse input</td>
+              </tr>
+              <tr>
+                <td><strong>Sensor 2 (Inner)</strong></td>
+                <td>VCC / GND</td>
+                <td>VIN (5V) / GND</td>
+                <td>Power rails</td>
+              </tr>
+              <tr>
+                <td>Sensor 2 (Inner)</td>
+                <td>TRIG</td>
+                <td><span style="font-family: monospace; font-weight: 700; color: #10b981;">GPIO 19</span></td>
+                <td>Trigger pulse output</td>
+              </tr>
+              <tr>
+                <td>Sensor 2 (Inner)</td>
+                <td>ECHO</td>
+                <td><span style="font-family: monospace; font-weight: 700; color: #10b981;">GPIO 21</span></td>
+                <td>Echo pulse input</td>
+              </tr>
+              <tr>
+                <td>Status LED</td>
+                <td>Anode (+)</td>
+                <td><span style="font-family: monospace; font-weight: 700;">GPIO 2</span></td>
+                <td>Onboard Blue LED indicator</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prototype Maintenance Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fas fa-tools"></i> System Demo & Maintenance
+        </div>
+      </div>
+      <div class="card-body">
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+          Use this button to restore the pre-seeded demo fleet (8 sample buses and realistic movement records) whenever you want a clean presentation:
+        </p>
+
+        <button class="btn btn-outline" style="width: 100%; border-color: #f59e0b; color: #b45309;" onclick="restoreSampleData()">
+          <i class="fas fa-database"></i> Restore Pre-seeded Sample Data
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ESP32 Arduino C++ Firmware Code Card -->
+<div class="card">
+  <div class="card-header" style="background: #0f172a; color: #ffffff;">
+    <div class="card-title" style="color: #ffffff;">
+      <i class="fas fa-code" style="color: #38bdf8;"></i> ESP32 Arduino Firmware (esp32_bus_gate.ino)
+    </div>
+    <button class="btn btn-sm btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.3); background: transparent;" onclick="copyFirmwareCode()">
+      <i class="fas fa-copy"></i> Copy Code
+    </button>
+  </div>
+  <div class="card-body" style="padding: 0; background: #070e1e;">
+    <pre id="firmware-code-block" style="padding: 20px; color: #38bdf8; font-family: 'Courier New', Courier, monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; max-height: 380px; margin: 0;"></pre>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

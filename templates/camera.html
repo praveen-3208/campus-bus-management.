@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Android IP Webcam Integration - Campus Gate{% endblock %}
+{% block page_title %}Android Camera Integration{% endblock %}
+{% block page_subtitle %}Connect your Android phone running IP Webcam over local Wi-Fi for automated gate snapshots{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px; margin-bottom: 24px;">
+  <!-- Left Column: Live Camera Stream & Capture Preview -->
+  <div>
+    <!-- Live Preview Card -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fas fa-video"></i> Live Camera Feed
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-sm btn-outline" id="camera-stream-toggle-btn" onclick="toggleStreamMode()">
+            <i class="fas fa-film"></i> Mode: <span id="stream-mode-label">Proxy Snapshot</span>
+          </button>
+          <a id="external-camera-link" href="#" target="_blank" class="btn btn-sm btn-outline" title="Open camera web UI directly in new tab">
+            <i class="fas fa-external-link-alt"></i> Open Direct
+          </a>
+        </div>
+      </div>
+      <div class="card-body" style="padding: 16px;">
+        <!-- Live Video Frame -->
+        <div class="camera-view-card" id="main-camera-container" style="min-height: 360px; max-height: 480px;">
+          <img id="main-camera-feed" src="{{ url_for('proxy_snapshot') }}" alt="Camera Stream" class="camera-feed-img" onerror="handleMainCamError()">
+          <div class="camera-watermark">
+            <span class="status-dot" id="cam-overlay-dot" style="background: var(--status-red);"></span>
+            <span id="cam-overlay-text">CAMERA DISCONNECTED</span>
+          </div>
+        </div>
+
+        <!-- Camera Control Bar -->
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-top: 14px; gap: 12px;">
+          <div style="font-size: 13px; color: #64748b;">
+            Status: <strong id="cam-current-status-text" style="color: #ef4444;">Disconnected</strong>
+            <span id="cam-latency-tag" style="margin-left: 8px; font-family: monospace;"></span>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline btn-sm" onclick="forceSnapshotRefresh()">
+              <i class="fas fa-sync-alt"></i> Refresh Frame
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="triggerInstantCapture()">
+              <i class="fas fa-camera"></i> Capture Photo Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Latest Capture Preview Card -->
+    <div class="card" id="latest-capture-card" style="display: none; border-left: 4px solid var(--blue-primary);">
+      <div class="card-header">
+        <div class="card-title" style="font-size: 14px;">
+          <i class="fas fa-check-circle" style="color: #10b981;"></i> Latest Photo Captured
+        </div>
+        <span class="badge badge-entry" id="latest-capture-badge">Captured</span>
+      </div>
+      <div class="card-body">
+        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+          <img id="latest-capture-img" src="" alt="Captured Snap" style="width: 140px; height: 95px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-light); cursor: pointer;" onclick="openImagePreview(this.src, 'Captured Photo')">
+          <div style="font-size: 13px;">
+            <div style="font-weight: 700; font-size: 15px; color: #0f172a;" id="latest-capture-bus">BUS-01</div>
+            <div style="color: #64748b; margin: 4px 0;" id="latest-capture-time">2026-10-16 08:30:00</div>
+            <div style="color: #10b981; font-weight: 600;">Saved into static/uploads/events/</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Settings, Connection Form & Setup Guide -->
+  <div>
+    <!-- IP Webcam Configuration Form -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fas fa-sliders-h"></i> IP Webcam Settings
+        </div>
+      </div>
+      <div class="card-body">
+        <form id="camera-config-form" onsubmit="saveCameraConfig(event)">
+          <div class="form-group">
+            <label class="form-label" for="cam-url-input">IP Webcam Server URL *</label>
+            <input type="text" id="cam-url-input" class="form-control" placeholder="http://192.168.1.100:8080" required>
+            <div class="form-text">As displayed on the Android IP Webcam screen</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="cam-snapshot-path">Snapshot Endpoint</label>
+              <input type="text" id="cam-snapshot-path" class="form-control" value="/shot.jpg">
+              <div class="form-text">e.g. /shot.jpg or /photo.jpg</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cam-stream-path">Stream Endpoint</label>
+              <input type="text" id="cam-stream-path" class="form-control" value="/video">
+              <div class="form-text">e.g. /video or /videofeed</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" id="cam-enabled-checkbox" checked>
+              <span>Enable automatic snapshot on gate arrival/departure</span>
+            </label>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" class="btn btn-outline" style="flex: 1;" onclick="testCameraDirect()">
+              <i class="fas fa-stethoscope"></i> Test Ping
+            </button>
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+              <i class="fas fa-save"></i> Save & Connect
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Manual Photo Upload Fallback Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="font-size: 14px;">
+          <i class="fas fa-upload"></i> Manual Photo Upload Fallback
+        </div>
+      </div>
+      <div class="card-body">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">
+          If the Android phone camera is offline, you can manually upload an image file from your PC:
+        </p>
+        <form id="manual-upload-form" onsubmit="handleManualUpload(event)">
+          <div class="form-group">
+            <input type="file" id="manual-photo-file" class="form-control" accept="image/*" required>
+          </div>
+          <button type="submit" class="btn btn-outline btn-sm" style="width: 100%;">
+            <i class="fas fa-cloud-upload-alt"></i> Upload Bus Photo
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Step-by-Step Android Setup Guide -->
+    <div class="card" style="background: #f8fafc; border-color: #cbd5e1;">
+      <div class="card-header" style="background: transparent;">
+        <div class="card-title" style="font-size: 14px;">
+          <i class="fas fa-mobile-alt" style="color: #2563eb;"></i> Android Setup Guide
+        </div>
+      </div>
+      <div class="card-body" style="font-size: 12px; line-height: 1.6; color: #334155;">
+        <ol style="padding-left: 18px; margin-bottom: 0;">
+          <li>Install the free <strong>IP Webcam</strong> app by Pavel Khlebovich from Google Play Store.</li>
+          <li>Connect your Android phone to the <strong>same Wi-Fi network</strong> as this laptop/PC.</li>
+          <li>Open the app, scroll to the bottom, and tap <strong>Start Server</strong>.</li>
+          <li>Look at the bottom of your phone screen for the URL, e.g. <code>http://192.168.1.15:8080</code>.</li>
+          <li>Enter that URL into the settings box above and click <strong>Save & Connect</strong>.</li>
+          <li>Position the phone camera facing the gate driveway.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Captured Snapshots Gallery -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fas fa-images"></i> Gate Snapshot Gallery
+    </div>
+    <span class="badge badge-neutral" style="font-size: 11px;">Saved in static/uploads/events/</span>
+  </div>
+  <div class="card-body">
+    <div id="camera-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+      <div style="text-align: center; color: #64748b; padding: 30px; grid-column: 1 / -1;">
+        Loading saved snapshots...
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+{% endblock %}

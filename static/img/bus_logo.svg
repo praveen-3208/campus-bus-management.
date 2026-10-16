@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="logoBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="badgeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#logoBg)"/>
+  
+  <!-- Outer Shield Ring -->
+  <rect x="8" y="8" width="84" height="84" rx="16" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0.4"/>
+  
+  <!-- Modern Bus Front Silhouette -->
+  <rect x="25" y="24" width="50" height="42" rx="8" fill="url(#badgeGrad)"/>
+  <rect x="30" y="29" width="40" height="18" rx="4" fill="#ffffff" opacity="0.9"/>
+  <!-- Headlights -->
+  <circle cx="34" cy="56" r="4" fill="#fef08a"/>
+  <circle cx="66" cy="56" r="4" fill="#fef08a"/>
+  <rect x="42" y="54" width="16" height="5" rx="1.5" fill="#0f172a"/>
+  
+  <!-- Tires -->
+  <rect x="29" y="66" width="10" height="12" rx="3" fill="#64748b"/>
+  <rect x="61" y="66" width="10" height="12" rx="3" fill="#64748b"/>
+
+  <!-- Signal / Ultrasonic Waves -->
+  <path d="M 16 38 A 18 18 0 0 0 16 62" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 84 38 A 18 18 0 0 1 84 62" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Automated Bus Entry & Exit Management System{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+{% block page_subtitle %}Real-time campus transit activity, gate sensors & camera status{% endblock %}
+
+{% block content %}
+<!-- KPI Stats Grid -->
+<div class="stats-grid">
+  <!-- Total Buses -->
+  <div class="stat-card stat-navy">
+    <div class="stat-info">
+      <div class="stat-label">Total Registered Buses</div>
+      <div class="stat-value" id="kpi-total-buses">-</div>
+      <div class="stat-subtitle">Campus fleet capacity</div>
+    </div>
+    <div class="stat-icon">
+      <i class="fas fa-bus"></i>
+    </div>
+  </div>
+
+  <!-- Inside Campus -->
+  <div class="stat-card stat-green">
+    <div class="stat-info">
+      <div class="stat-label">Currently Inside</div>
+      <div class="stat-value" id="kpi-inside-buses" style="color: var(--status-green);">-</div>
+      <div class="stat-subtitle">Parked in campus bay</div>
+    </div>
+    <div class="stat-icon">
+      <i class="fas fa-parking"></i>
+    </div>
+  </div>
+
+  <!-- Outside Campus -->
+  <div class="stat-card stat-amber">
+    <div class="stat-info">
+      <div class="stat-label">Currently Outside</div>
+      <div class="stat-value" id="kpi-outside-buses" style="color: var(--status-amber);">-</div>
+      <div class="stat-subtitle">On transit / student routes</div>
+    </div>
+    <div class="stat-icon">
+      <i class="fas fa-road"></i>
+    </div>
+  </div>
+
+  <!-- Today's Entries -->
+  <div class="stat-card stat-green">
+    <div class="stat-info">
+      <div class="stat-label">Today's Entries</div>
+      <div class="stat-value" id="kpi-today-entries">-</div>
+      <div class="stat-subtitle">Gate entry passes logged</div>
+    </div>
+    <div class="stat-icon">
+      <i class="fas fa-sign-in-alt"></i>
+    </div>
+  </div>
+
+  <!-- Today's Exits -->
+  <div class="stat-card stat-red">
+    <div class="stat-info">
+      <div class="stat-label">Today's Exits</div>
+      <div class="stat-value" id="kpi-today-exits" style="color: var(--status-red);">-</div>
+      <div class="stat-subtitle">Gate exit passes logged</div>
+    </div>
+    <div class="stat-icon">
+      <i class="fas fa-sign-out-alt"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Hardware Status & Quick Action Banner -->
+<div class="card" style="background: linear-gradient(135deg, #070e1e 0%, #0f172a 100%); color: #ffffff; border: none; margin-bottom: 24px;">
+  <div class="card-body" style="padding: 20px 24px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px;">
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #38bdf8; font-weight: 700; margin-bottom: 4px;">
+          <i class="fas fa-shield-alt"></i> Gate Control & Active Target
+        </div>
+        <div style="font-size: 18px; font-weight: 700;">
+          Target Bus: <span id="dash-active-bus-code" style="color: #38bdf8;">BUS-01</span>
+          <span id="dash-active-bus-details" style="font-size: 13px; font-weight: 400; color: #94a3b8; margin-left: 8px;">(KA-05-AA-1001 • Route 1)</span>
+        </div>
+        <div style="font-size: 13px; color: #cbd5e1; margin-top: 4px;">
+          Hardware sensors will log arrival/departure for this vehicle. You can switch target or trigger manual logs below.
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn btn-sm btn-outline" style="background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.2);" onclick="openActiveBusSwitcher()">
+          <i class="fas fa-exchange-alt"></i> Switch Bus
+        </button>
+        <button class="btn btn-sm btn-success" onclick="quickLogEvent('ENTRY')">
+          <i class="fas fa-arrow-down"></i> Log Quick Entry
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="quickLogEvent('EXIT')">
+          <i class="fas fa-arrow-up"></i> Log Quick Exit
+        </button>
+        <a href="{{ url_for('monitoring_page') }}" class="btn btn-sm btn-primary">
+          <i class="fas fa-desktop"></i> Open Live Gate
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+  <!-- Hourly Movement Activity Chart -->
+  <div class="card" style="margin-bottom: 0;">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fas fa-chart-bar"></i> Today's Movement Trends (Hourly)
+      </div>
+      <span class="badge badge-neutral" style="font-size: 11px;">Dual Sensor Logs</span>
+    </div>
+    <div class="card-body">
+      <div style="height: 260px; position: relative;">
+        <canvas id="hourlyActivityChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fleet Occupancy Donut Chart -->
+  <div class="card" style="margin-bottom: 0;">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fas fa-chart-pie"></i> Campus Occupancy
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="height: 200px; position: relative;">
+        <canvas id="occupancyDonutChart"></canvas>
+      </div>
+      <div style="display: flex; justify-content: space-around; margin-top: 16px; font-size: 13px;">
+        <div style="text-align: center;">
+          <div style="color: var(--status-green); font-weight: 700; font-size: 16px;" id="donut-inside-count">-</div>
+          <div style="color: var(--text-muted); font-size: 11px;">Inside Campus</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="color: var(--status-amber); font-weight: 700; font-size: 16px;" id="donut-outside-count">-</div>
+          <div style="color: var(--text-muted); font-size: 11px;">Outside Campus</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Gate Activity Table -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fas fa-stream"></i> Recent Bus Movements
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <a href="{{ url_for('history_page') }}" class="btn btn-sm btn-outline">
+        View Full History <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Snapshot</th>
+            <th>Bus ID</th>
+            <th>Registration</th>
+            <th>Route Name</th>
+            <th>Driver</th>
+            <th>Event</th>
+            <th>Timestamp</th>
+            <th>Detection Method</th>
+          </tr>
+        </thead>
+        <tbody id="recent-activity-tbody">
+          <tr>
+            <td colspan="8" style="text-align: center; color: #64748b; padding: 30px;">
+              <i class="fas fa-spinner fa-spin"></i> Loading recent activity...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

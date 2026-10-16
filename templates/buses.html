@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Bus Fleet Management - Campus Gate{% endblock %}
+{% block page_title %}Bus Management{% endblock %}
+{% block page_subtitle %}Register campus buses, update driver assignments, and set active gate vehicles{% endblock %}
+
+{% block content %}
+<!-- Action Bar & Search Filter -->
+<div class="card" style="margin-bottom: 20px;">
+  <div class="card-body" style="padding: 16px 20px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
+      <!-- Search Input -->
+      <div style="display: flex; align-items: center; gap: 12px; flex: 1; max-width: 480px;">
+        <div style="position: relative; width: 100%;">
+          <i class="fas fa-search" style="position: absolute; left: 14px; top: 12px; color: #94a3b8;"></i>
+          <input type="text" id="bus-search-input" class="form-control" style="padding-left: 38px;" 
+                 placeholder="Search by Bus ID, registration, route, or driver..." onkeyup="filterBuses()">
+        </div>
+        <select id="bus-status-filter" class="form-control form-select" style="width: 140px;" onchange="filterBuses()">
+          <option value="">All Statuses</option>
+          <option value="Inside">Inside</option>
+          <option value="Outside">Outside</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-outline btn-sm" onclick="fetchBuses()">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openAddBusModal()">
+          <i class="fas fa-plus-circle"></i> Register New Bus
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bus Fleet Table -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fas fa-bus-alt"></i> Registered Campus Fleet (<span id="bus-count-badge">0</span>)
+    </div>
+    <span class="badge badge-neutral" style="font-size: 11px;">Active Gate Target Marked</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Active Target</th>
+            <th>Bus ID</th>
+            <th>Registration No</th>
+            <th>Assigned Route</th>
+            <th>Driver Name</th>
+            <th>Contact</th>
+            <th>Current Status</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="buses-table-body">
+          <tr>
+            <td colspan="8" style="text-align: center; color: #64748b; padding: 40px;">
+              <i class="fas fa-spinner fa-spin"></i> Loading fleet records...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Bus Modal -->
+<div class="modal-overlay" id="bus-form-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title" id="bus-modal-title">Register New Bus</h3>
+      <button class="modal-close-btn" onclick="closeModal('bus-form-modal')">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form id="bus-form" onsubmit="handleBusFormSubmit(event)">
+      <div class="modal-body">
+        <input type="hidden" id="bus-edit-pk" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="bus-id-input">Bus ID / Code *</label>
+            <input type="text" id="bus-id-input" class="form-control" placeholder="e.g. BUS-09" required>
+            <div class="form-text">Unique code recognized at gate</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="bus-reg-input">Registration No *</label>
+            <input type="text" id="bus-reg-input" class="form-control" placeholder="e.g. KA-05-AA-1009" required>
+            <div class="form-text">Official vehicle plate number</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="bus-route-input">Assigned Route *</label>
+          <input type="text" id="bus-route-input" class="form-control" placeholder="e.g. Route 9 - North Suburbs / Junction" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="bus-driver-input">Driver Name *</label>
+            <input type="text" id="bus-driver-input" class="form-control" placeholder="e.g. Suresh Gowda" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="bus-contact-input">Driver Contact *</label>
+            <input type="text" id="bus-contact-input" class="form-control" placeholder="e.g. +91 98450 99999" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="bus-status-input">Initial Campus Status</label>
+          <select id="bus-status-input" class="form-control form-select">
+            <option value="Inside">Inside Campus (Parked)</option>
+            <option value="Outside">Outside Campus (On Trip)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('bus-form-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="bus-form-submit-btn">Save Bus Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Bus Confirmation Modal -->
+<div class="modal-overlay" id="bus-delete-modal">
+  <div class="modal-card" style="max-width: 440px;">
+    <div class="modal-header" style="background: #991b1b;">
+      <h3 class="modal-title">Confirm Deletion</h3>
+      <button class="modal-close-btn" onclick="closeModal('bus-delete-modal')">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body" style="padding: 24px;">
+      <input type="hidden" id="bus-delete-pk" value="">
+      <p style="font-size: 15px; color: #1e293b; margin-bottom: 12px;">
+        Are you sure you want to delete <strong id="bus-delete-code">BUS-00</strong>?
+      </p>
+      <p style="font-size: 13px; color: #64748b;">
+        This action will permanently remove this bus from the registered fleet. Recorded historical gate events for this bus will remain in the log.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('bus-delete-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteBus()">Delete Bus</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/buses.js') }}"></script>
+{% endblock %}
