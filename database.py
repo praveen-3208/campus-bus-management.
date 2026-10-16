@@ -75,7 +75,7 @@ def init_db(seed_if_empty=True):
 
     # Default Settings
     default_settings = {
-        'camera_url': 'http://192.168.1.100:8080',
+        'camera_url': 'http://10.182.220.107:8080',
         'camera_stream_path': '/video',
         'camera_snapshot_path': '/shot.jpg',
         'camera_enabled': 'true',

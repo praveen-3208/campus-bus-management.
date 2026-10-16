@@ -24,7 +24,7 @@ def allowed_file(filename):
 
 def get_camera_urls():
     """Returns normalized camera base URL, stream URL, and snapshot URL."""
-    base_url = get_setting('camera_url', 'http://192.168.1.100:8080').strip().rstrip('/')
+    base_url = get_setting('camera_url', 'http://10.182.220.107:8080').strip().rstrip('/')
     stream_path = get_setting('camera_stream_path', '/video').strip()
     snapshot_path = get_setting('camera_snapshot_path', '/shot.jpg').strip()
 

@@ -13,7 +13,7 @@ async function loadCameraSettings() {
     const data = await res.json();
     const cam = data.hardware.camera;
 
-    currentBaseUrl = cam.base_url || 'http://192.168.1.100:8080';
+    currentBaseUrl = cam.base_url || 'http://10.182.220.107:8080';
     currentStreamUrl = cam.stream_url;
 
     document.getElementById('cam-url-input').value = currentBaseUrl;

@@ -36,8 +36,8 @@ const char* WIFI_SSID     = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // 2. Flask Server Configuration (Replace with your laptop/PC IP on the local Wi-Fi)
-const char* SERVER_URL = "http://192.168.1.50:5000/api/sensor-event";
-const char* PING_URL   = "http://192.168.1.50:5000/api/esp32/ping";
+const char* SERVER_URL = "http://10.182.220.40:5000/api/sensor-event";
+const char* PING_URL   = "http://10.182.220.40:5000/api/esp32/ping";
 const char* DEVICE_ID  = "ESP32-GATE-01";
 
 // 3. Pin Definitions
